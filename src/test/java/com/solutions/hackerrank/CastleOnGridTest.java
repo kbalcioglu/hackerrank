@@ -23,114 +23,133 @@ public class CastleOnGridTest {
         Assertions.assertEquals(expected, result);
     }
 
-    private static Point goal;
-    private static Set<Point> pointVisited;
-    private static Set<Point> pointOffered;
-    private static Queue<Point> pointQueue;
-
     public static int minimumMoves(List<String> grid, int startX, int startY, int goalX, int goalY) {
-        goal = new Point(goalX, goalY);
-        Point start = new Point(startX, startY);
-        pointVisited = new HashSet<>();
-        pointOffered = new HashSet<>();
-        pointQueue = new LinkedList<>();
-        pointQueue.offer(start);
+        SearchGrid searchGrid = new SearchGrid(grid,startX,startY,goalX,goalY);
+        return searchGrid.search();
+    }
 
-        while (!pointQueue.isEmpty()) {
-            Point currentPoint = pointQueue.poll();
-            pointVisited.add(currentPoint);
-            if (isFinished(currentPoint)) {
-                return currentPoint.moveCount;
-            }
-            move(currentPoint, grid);
-        }
+}
+enum MoveDirection {
+    RIGHT,
+    LEFT,
+    UP,
+    DOWN;
+}
 
+class SearchGrid {
+    private int gridRowCount;
+    private int gridColCount;
+    private final int[][] grid;
+    private final Point start;
+    private final Point goal;
+    private final Set<Point> pointVisited;
+    private final Set<Point> pointOffered;
+    private final Queue<Point> pointQueue;
+    private boolean isFinished;
+    private Point finishedPoint;
+
+    public SearchGrid(List<String> grid, int startX, int startY, int goalX, int goalY) {
+        this.grid = generateGrid(grid);
+        this.goal = new Point(goalX, goalY);
+        this.start = new Point(startX, startY);
+        this.pointVisited = new HashSet<>();
+        this.pointOffered = new HashSet<>();
+        this.pointQueue = new LinkedList<>();
+        this.pointQueue.offer(start);
+        this.pointOffered.add(start);
+    }
+
+    private int parseToInt(String s) {
+        if (s.equals("."))
+            return 1;
         return 0;
     }
 
-    private static void move(Point p, List<String> grid) {
-        moveRight(p, grid);
-        moveLeft(p, grid);
-        moveUp(p, grid);
-        moveDown(p, grid);
+    private boolean checkPointIsEligible(Point p) {
+        return p.row < gridRowCount
+                && p.col < gridColCount
+                && p.row >= 0
+                && p.col >= 0
+                && this.grid[p.row][p.col] == 1;
     }
 
-    private static void moveRight(Point p, List<String> grid) {
-        Point temp = p;
-        boolean loop = true;
-        int moveCount = temp.moveCount;
-        while (loop) {
-            temp = temp.moveRight();
-            temp.moveCount = moveCount + 1;
-            if (pointVisited.contains(temp))
-                return;
-            else if (temp.col >= grid.size() || grid.get(temp.row).charAt(temp.col) == 'X') {
-                loop = false;
-            } else if (!pointOffered.contains(temp)) {
-                pointQueue.offer(temp);
-                pointOffered.add(temp);
+    private boolean isFinished(Point currentPoint) {
+        return currentPoint != null && currentPoint.row == this.goal.row && currentPoint.col == this.goal.col;
+    }
+
+    private int[][] generateGrid(List<String> grid) {
+        gridRowCount = grid.size();
+        gridColCount = grid.get(0).length();
+        int[][] result = new int[gridRowCount][gridColCount];
+        for (int i = 0; i < grid.size(); i++) {
+            result[i] = Arrays.stream(grid.get(i).split("")).mapToInt(this::parseToInt).toArray();
+        }
+        return result;
+    }
+
+    public int search() {
+        while (!pointQueue.isEmpty() && !this.isFinished) {
+            Point currentPoint = pointQueue.poll();
+            if (isFinished(currentPoint)) {
+                this.isFinished = true;
+                this.finishedPoint = currentPoint;
+                break;
             }
+            if (this.pointVisited.contains(currentPoint))
+                continue;
+            this.pointVisited.add(currentPoint);
+            expand(currentPoint);
+        }
+        if (this.finishedPoint != null)
+            return this.finishedPoint.moveCount;
+        return 0;
+    }
+
+    private Point makeMove(Point p, MoveDirection moveDirection) {
+        switch (moveDirection) {
+            case DOWN:
+                return p.moveDown();
+            case RIGHT:
+                return p.moveRight();
+            case LEFT:
+                return p.moveLeft();
+            case UP:
+                return p.moveUp();
+        }
+        return null;
+    }
+
+    private void checkForMove(Point p, MoveDirection moveDirection) {
+        Point newPoint = makeMove(p, moveDirection);
+        if (newPoint == null)
+            return;
+        Point newOfferPoint = newPoint.incrementMoveCount();
+        if (!checkPointIsEligible(newOfferPoint)) {
+            return;
+        }
+        if (this.isFinished(newOfferPoint)) {
+            this.isFinished = true;
+            this.finishedPoint = newOfferPoint;
+            return;
+        }
+        this.offerNewPoint(newOfferPoint);
+        this.checkForMove(newPoint, moveDirection);
+    }
+
+    private void expand(Point p) {
+        for (MoveDirection moveDirection : MoveDirection.values()) {
+            checkForMove(p, moveDirection);
         }
     }
 
-    private static void moveLeft(Point p, List<String> grid) {
-        Point temp = p;
-        boolean loop = true;
-        int moveCount = temp.moveCount;
-        while (loop) {
-            temp = temp.moveLeft();
-            temp.moveCount = moveCount + 1;
-            if (pointVisited.contains(temp))
-                return;
-            else if (temp.col < 0 || grid.get(temp.row).charAt(temp.col) == 'X') {
-                loop = false;
-            } else if (!pointOffered.contains(temp)) {
-                pointQueue.offer(temp);
-                pointOffered.add(temp);
-            }
-        }
+    private void offerNewPoint(Point p) {
+        if (pointVisited.contains(p))
+            return;
+        if (pointOffered.contains(p))
+            return;
+        pointQueue.offer(p);
+        pointOffered.add(p);
     }
-
-    private static void moveUp(Point p, List<String> grid) {
-        Point temp = p;
-        boolean loop = true;
-        int moveCount = temp.moveCount;
-        while (loop) {
-            temp = temp.moveUp();
-            temp.moveCount = moveCount + 1;
-            if (pointVisited.contains(temp))
-                return;
-            else if (temp.row < 0 || grid.get(temp.row).charAt(temp.col) == 'X') {
-                loop = false;
-            } else if (!pointOffered.contains(temp)) {
-                pointQueue.offer(temp);
-                pointOffered.add(temp);
-            }
-        }
-    }
-
-    private static void moveDown(Point p, List<String> grid) {
-        Point temp = p;
-        boolean loop = true;
-        int moveCount = temp.moveCount;
-        while (loop) {
-            temp = temp.moveDown();
-            temp.moveCount = moveCount + 1;
-            if (pointVisited.contains(temp))
-                return;
-            else if (temp.row >= grid.size() || grid.get(temp.row).charAt(temp.col) == 'X') {
-                loop = false;
-            } else if (!pointOffered.contains(temp)) {
-                pointQueue.offer(temp);
-                pointOffered.add(temp);
-            }
-        }
-    }
-
-    private static boolean isFinished(Point p) {
-        return p.row == goal.row && p.col == goal.col;
-    }
-
 }
 
 class Point {
@@ -139,12 +158,21 @@ class Point {
     int moveCount;
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        if (this.getClass() != o.getClass()) return false;
-        Point p = (Point) o;
-        return (p.col == this.col && p.row == this.row);
+    public int hashCode() {
+        int result = row;
+        result = 31 * result + col;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == null)
+            return false;
+        if (!(other instanceof Point))
+            return false;
+        Point p = (Point) other;
+        return p.hashCode() == this.hashCode();
+        //return (p.col == this.col && p.row == this.row);
     }
 
     Point(int row, int col) {
@@ -173,6 +201,10 @@ class Point {
 
     public Point moveDown() {
         return new Point(this.row + 1, this.col, this.moveCount);
+    }
+
+    public Point incrementMoveCount() {
+        return new Point(this.row, this.col, this.moveCount + 1);
     }
 
 }
