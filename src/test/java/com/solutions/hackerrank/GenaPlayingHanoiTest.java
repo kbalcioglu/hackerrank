@@ -1,5 +1,5 @@
 package com.solutions.hackerrank;
-
+/*
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -49,3 +49,4 @@ public class GenaPlayingHanoiTest {
         return rods[0].size() == discCount;
     }
 }
+*/
