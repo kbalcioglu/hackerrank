@@ -171,8 +171,8 @@ class Point {
         if (!(other instanceof Point))
             return false;
         Point p = (Point) other;
-        return p.hashCode() == this.hashCode();
-        //return (p.col == this.col && p.row == this.row);
+        //return p.hashCode() == this.hashCode();
+        return (p.col == this.col && p.row == this.row);
     }
 
     Point(int row, int col) {
