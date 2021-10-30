@@ -23,22 +23,6 @@ public class RunningMedianTest {
         Assertions.assertArrayEquals(expected.toArray(),result.toArray());
     }
 
-    @Test
-    public void test_sorted_1() {
-        List<Integer> input = List.of(12, 4, 5, 3, 8, 7);
-        List<Integer> expected = List.of(3, 4, 5, 7, 8, 12);
-        List<Integer> result = addOrderedAll(input);
-        Assertions.assertArrayEquals(expected.toArray(),result.toArray());
-    }
-
-    @Test
-    public void test_sorted_2() {
-        List<Integer> input = List.of(12, 4, 28, 16, 15, 7, 6, 2, 8, 5, 18);
-        List<Integer> expected = List.of(2, 4, 5, 6, 7, 8, 12, 15, 18, 28);
-        List<Integer> result = addOrderedAll(input);
-        Assertions.assertArrayEquals(expected.toArray(),result.toArray());
-
-    }
 
     public static List<Double> runningMedian(List<Integer> a) {
         // Write your code here
